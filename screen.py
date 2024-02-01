@@ -2,7 +2,7 @@
 from skreen import Skreen
 
 if __name__ == "__main__" :
-    s = Skreen(clear=True)
+    s = Skreen(clear=True, color=(85, 0, 0))
 
     msg = ""
     while True :
@@ -11,5 +11,5 @@ if __name__ == "__main__" :
             continue
         if msg == "!quit" :
             break
-        s.print(msg, True)
+        s.print(msg)
     s.close()
