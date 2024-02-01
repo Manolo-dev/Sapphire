@@ -1,20 +1,23 @@
 from kurses import *
 
 class Skreen :
-    def __init__(self, clear=False) :
+    """Skreen is a class that allows you to create a screen with a chat-like interface."""
+    def __init__(self, clear=False, color=(0, 85, 0)):
+        """Create a new Skreen object."""
         self.size = getTerminalSize()
         if clear : self.clear()
-        self.color = lambda string: ANSI.color.rgb(string, 0, 85, 0)
-        self.file  = open("contact.csv", "w+")
+        self.color = lambda string: ANSI.color.rgb(string, *color)
         print()
 
     def clear(self) :
+        """Clear the screen."""
         if os.name == 'nt' :
             os.system('cls')
         else :
             os.system('clear')
 
     def input(self) :
+        """Create an input field."""
         print(self.color("╭" + "─" * (self.size[0] - 2) + "╮"), end="\n\n")
         print(self.color("╰" + "─" * (self.size[0] - 2) + "╯"), end="")
         print(ANSI.cursor.beg_up(0), end="")
@@ -23,7 +26,7 @@ class Skreen :
         return result
 
     def print(self, string, sender=False) :
-        wr, length = wrap(string, self.size[0] - 8, oneline=True)
+        wr, length = wrap(string, self.size[0] - 8 if sender else self.size[0] - 12, oneline=True)
 
         if sender :
             tab = " " * (self.size[0] - length - 2)

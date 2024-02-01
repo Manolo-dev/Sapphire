@@ -1,7 +1,8 @@
+#!/usr/bin/python3
 from skreen import Skreen
 
 if __name__ == "__main__" :
-    s = Skreen(True)
+    s = Skreen(clear=True)
 
     msg = ""
     while True :
