@@ -1,4 +1,3 @@
-from kurses import *
 from skreen import Skreen
 
 if __name__ == "__main__" :
@@ -9,7 +8,7 @@ if __name__ == "__main__" :
         msg = s.input()
         if msg == "" or msg == " " * len(msg) :
             continue
-        if msg == "^Z" :
+        if msg == "!quit" :
             break
         s.print(msg, True)
     s.close()
