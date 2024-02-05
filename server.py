@@ -3,9 +3,9 @@ import json
 import threading
 
 class Server:
-    def __init__(self):
+    def __init__(self, port:int=5000):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((socket.gethostname(), 5000))
+        self.socket.bind((socket.gethostname(), port))
         self.clients:dict[str, socket.socket] = {}
         self.contacts:list = []
     
@@ -40,3 +40,7 @@ class Server:
             self.clients[log["mac"]] = clientsocket
             self.contacts.append(log)
             threading.Thread(target=self.client, args=(clientsocket, log["mac"])).start()
+
+if __name__ == "__main__":
+    server = Server()
+    server.start()

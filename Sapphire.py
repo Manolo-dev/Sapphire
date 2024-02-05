@@ -28,27 +28,27 @@ if not os.path.exists("contact.csv"):
     writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
 
-# mac_address = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0,8*6,8)][::-1])
+mac_address = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0,8*6,8)][::-1])
 print(mac_address)
-name = input("Name: ")
+name = ""
 
 contacts = list(csv.DictReader(open("contact.csv", "r")))
 print(contacts)
 
+port = 5000
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 for row in contacts:
     try:
-        s.connect((row["mac"], 5000))
+        s.connect((row["mac"], port))
         break
     except:
         pass
 else:
     try:
-        s.connect((mac_address, 5000))
+        s.connect((mac_address, port))
     except:
-        server = Server()
-        multiprocessing.Process(target=server.start).start()
-        s.connect((mac_address, 5000))
+        print("No server found")
+        exit()
 
 s.send(bytes(json.dumps({"name": name, "mac": mac_address, "color": (0, 85, 0)}), "utf-8"))
 get_contacts = s.recv(4096)

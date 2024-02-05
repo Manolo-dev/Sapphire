@@ -51,7 +51,7 @@ class _color:
 	hidden  = lambda string: f"{_ANSI.CSI}8m{string}{_ANSI.CSI}28m"
 	strike  = lambda string: f"{_ANSI.CSI}9m{string}{_ANSI.CSI}29m"
 
-	placeholder = lambda string: f"{_ANSI.CSI}3m\033[1;30m{string}{_ANSI.CSI}23m\033[0m\033[{len(string)}D"
+	placeholder = lambda string: f"{_ANSI.CSI}3m{_ANSI.CSI}1;30m{string}{_ANSI.CSI}23m{_ANSI.CSI}0m{_ANSI.CSI}{len(string)}D"
 
 	bold_beg    = f"{_ANSI.CSI}1m"
 	dim_beg     = f"{_ANSI.CSI}2m"

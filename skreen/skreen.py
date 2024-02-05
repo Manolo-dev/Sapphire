@@ -3,7 +3,7 @@ from kurses import ANSI, getTerminalSize, kinput, wrap
 
 class Skreen :
     """Skreen is a class that allows you to create a screen with a chat-like interface."""
-    def __init__(self, clear=False, sender=False, color=(0, 85, 0)):
+    def __init__(self, clear=False, sender=False, color=(0, 160, 0)):
         """Create a new Skreen object."""
         self.size = getTerminalSize()
         if clear : self.clear()
@@ -20,6 +20,7 @@ class Skreen :
 
     def input(self):
         """Create an input field."""
+        self.size = getTerminalSize()
         print(self.color("╭" + "─" * (self.size[0] - 2) + "╮"), end="\n\n")
         print(self.color("╰" + "─" * (self.size[0] - 2) + "╯"), end="")
         print(ANSI.cursor.beg_up(0), end="")
