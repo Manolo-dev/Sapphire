@@ -1,122 +1,99 @@
 import socket
-import uuid
-import threading
-
-from kurses import *
+import csv
 from skreen import Skreen
+from server import Server
+import os
+import multiprocessing
+import json
+import uuid
+import psutil
 
-class Sapphire :
-    mac = hex(uuid.getnode())[2:]
-    ip  = socket.gethostbyname(socket.gethostname())
+def get_ip_addresses():
+    for interface, snics in psutil.net_if_addrs().items():
+        mac = None
+        for snic in snics:
+            if snic.family == -1 :
+                mac = snic.address
+            if snic.family == 2 :
+                yield (interface, snic.address, snic.netmask, mac)
 
-    def __init__(self) :
-        """
-            Crée un socket et ouvre une interface
-            @params:
-                self {selfObject}
-        """
+mac_address = list(get_ip_addresses())
+print(mac_address)
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.conn   = None
-        self.Screen = Skreen()
+self_skreen = Skreen()
+receive_skreen:dict[str, Skreen] = {}
+if not os.path.exists("contact.csv"):
+    file = open("contact.csv", "w")
+    fieldnames = ["name", "mac", "color"]
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
+    writer.writeheader()
 
-    def open(self, host, port) :
-        """
-            Open server
-            @params:
-                self {selfObject}
-                host {str} IP du client
-                port {int} port du client
-        """
+# mac_address = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0,8*6,8)][::-1])
+print(mac_address)
+name = input("Name: ")
 
-        self.socket.bind((host, port))
-        self.socket.listen()
-        self.conn = self.socket.accept()[0]
+contacts = list(csv.DictReader(open("contact.csv", "r")))
+print(contacts)
 
-    def close(self) :
-        """
-            Ferme le socket et termine l'interface
-            @params:
-                self {selfObject}
-        """
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+for row in contacts:
+    try:
+        s.connect((row["mac"], 5000))
+        break
+    except:
+        pass
+else:
+    try:
+        s.connect((mac_address, 5000))
+    except:
+        server = Server()
+        multiprocessing.Process(target=server.start).start()
+        s.connect((mac_address, 5000))
 
-        self.socket.close()
-        self.Screen.close()
+s.send(bytes(json.dumps({"name": name, "mac": mac_address, "color": (0, 85, 0)}), "utf-8"))
+get_contacts = s.recv(4096)
+get_contacts = json.loads(get_contacts)
+for contact in get_contacts:
+    receive_skreen[contact["mac"]] = Skreen(clear=True, sender=True, color=contact["color"])
+    for former_contact in contacts:
+        if former_contact["mac"] == contact["mac"]:
+            former_contact.update(contact)
+            break
+    else:
+        contacts.append(contact)
 
-    def connect(self, host, port) :
-        """
-            Connecte au server
-            @params:
-                self {selfObject}
-                host {str} IP du serveur
-                port {int} port du serveur
-        """
+quit_ = False
 
-        self.socket.connect((host, port))
+def connection_receive():
+    while not quit_:
+        msg = s.recv(4096)
+        msg = json.loads(msg)
+        if "msg" in msg:
+            receive_skreen[msg["mac"]].print(msg["msg"])
+        if "new" in msg:
+            receive_skreen[msg["new"]["mac"]] = Skreen(clear=True, sender=True, color=msg["new"]["color"])
+            print(f"{msg["new"]} Vient de se connecter")
 
-    def input(self) :
-        """
-            Attend une entrée et l'envoie, le repète tant que l'entrée n'est pas "exit"
-            @params:
-                self {selfObject}
-        """
+recv:multiprocessing.Process = multiprocessing.Process(target=connection_receive).start()
 
-        msg = ""
-        while msg == "" :
-            try :
-                msg = self.Screen.input()
-                self.socket.send(msg.encode('UTF-8'))
-            except EOFError :
-                break
-        return msg
-
-    def receive(self) :
-        """
-            Attend un message et l'affiche
-            @params:
-                self {selfObject}
-        """
-
-        msg = ""
-        while msg == "" :
-            try :
-                data = self.conn.recv(1024)
-            except :
-                break
-            if not data :
-                break
-            msg = data.decode()
-
-        return msg
-
-def server() :
-    serv = Sapphire()
-    serv.open("10.86.24.183", 65001)
-    msg = serv.receive()
-    serv.Screen.print(msg, False)
-    serv.close()
-
-    return msg
-
-def client() :
-    clnt = Sapphire()
-    clnt.connect("10.86.24.183", 65001)
-    msg = clnt.input()
-    clnt.Screen.print(msg, True)
-    clnt.close()
-
-    return msg
-
-if __name__ == "__main__" :
-    if len(sys.argv) > 1 and sys.argv[1] == "-s" :
-        while True :
-            msg = server()
-            if msg[-2:] == "^Z" : break
-            msg = client()
-            if msg == "^Z" : break
-    else :
-        while True :
-            msg = client()
-            if msg == "^Z" : break
-            msg = server()
-            if msg == "^Z" : break
+while True:
+    msg = self_skreen.input()
+    if msg == "!quit":
+        quit_ = True
+        recv.terminate()
+        break
+    if msg == "!clear":
+        self_skreen.clear()
+        continue
+    if msg == "!help":
+        print("quit: Quitte le programme")
+        print("clear: Efface l'écran")
+        print("contacts: Affiche les contacts")
+        print("add: Ajoute un contact")
+        print("remove: Supprime un contact")
+        print("color: Change la couleur du texte")
+        print("help: Affiche l'aide")
+        continue
+    s.send(bytes(json.dumps({"msg": msg, "mac": mac_address}), "utf-8"))
+    self_skreen.print(msg)
+    
